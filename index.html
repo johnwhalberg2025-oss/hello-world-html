@@ -1,16 +1,515 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Hello, World!</title>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- https://fonts.google.com/specimen/Vollkorn?selection.family=Vollkorn:400,400i,700,700i -->
-    <link href="https://fonts.googleapis.com/css?family=Vollkorn:400,400i,700,700i" rel="stylesheet">
-    <link rel="stylesheet" href="/style.css">
-    <script src="/script.js" defer></script>
-  </head>  
-  <body>
-    <h1>Hello, World!</h1>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Secure Access Portal</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0a0a1a;
+    color: #fff;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* Animated 3D Background */
+  #bgCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 10;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  /* Glass Card with 3D effect */
+  .card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 24px;
+    padding: 40px 30px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transform-style: preserve-3d;
+    animation: cardFloat 6s ease-in-out infinite;
+    transition: transform 0.3s ease;
+  }
+
+  @keyframes cardFloat {
+    0%, 100% { transform: translateY(0) rotateX(0deg); }
+    50% { transform: translateY(-15px) rotateX(2deg); }
+  }
+
+  .lock-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 25px;
+    position: relative;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .lock-icon svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 20px rgba(100, 200, 255, 0.6));
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #6dd5ed, #2193b0);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+  }
+
+  .subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 30px;
+  }
+
+  .input-group {
+    position: relative;
+    margin-bottom: 20px;
+  }
+
+  .input-group label {
+    display: block;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  input {
+    width: 100%;
+    padding: 16px 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    color: #fff;
+    font-size: 16px;
+    outline: none;
+    transition: all 0.3s ease;
+  }
+
+  input:focus {
+    border-color: #6dd5ed;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(109, 213, 237, 0.2);
+  }
+
+  input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #2193b0, #6dd5ed);
+    border: none;
+    border-radius: 14px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn:active {
+    transform: scale(0.97);
+  }
+
+  .btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  .btn:active::after {
+    width: 300px;
+    height: 300px;
+  }
+
+  .error-msg {
+    color: #ff6b6b;
+    font-size: 13px;
+    text-align: center;
+    margin-top: 15px;
+    min-height: 18px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .error-msg.show {
+    opacity: 1;
+    animation: shake 0.4s;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  /* Blocked Screen */
+  .blocked-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 10, 26, 0.97);
+    backdrop-filter: blur(10px);
+    text-align: center;
+    padding: 30px;
+  }
+
+  .blocked-screen .icon {
+    font-size: 70px;
+    margin-bottom: 20px;
+    animation: pulse 2s infinite;
+  }
+
+  .blocked-screen h2 {
+    font-size: 26px;
+    margin-bottom: 12px;
+    color: #ff6b6b;
+  }
+
+  .blocked-screen p {
+    color: rgba(255, 255, 255, 0.6);
+    max-width: 300px;
+    line-height: 1.6;
+  }
+
+  /* Fullscreen Iframe */
+  #frameContainer {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: none;
+    background: #000;
+  }
+
+  #frameContainer iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #6dd5ed;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 20px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .loading-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a1a;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<!-- Loading Screen -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="spinner"></div>
+  <p style="color: rgba(255,255,255,0.6)">Verifying access...</p>
+</div>
+
+<!-- Desktop / IP Blocked Screen -->
+<div class="blocked-screen hidden" id="blockedScreen">
+  <div class="icon">🚫</div>
+  <h2 id="blockTitle">Access Denied</h2>
+  <p id="blockMsg">This service is not available on your device or network.</p>
+</div>
+
+<!-- Main Access Card -->
+<div class="container hidden" id="mainContainer">
+  <div class="card" id="card">
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="url(#grad)" stroke-width="1.8">
+        <defs>
+          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#6dd5ed"/>
+            <stop offset="100%" stop-color="#2193b0"/>
+          </linearGradient>
+        </defs>
+        <rect x="4" y="11" width="16" height="10" rx="2"/>
+        <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+        <circle cx="12" cy="16" r="1.5" fill="url(#grad)"/>
+      </svg>
+    </div>
+    <h1>Secure Access</h1>
+    <p class="subtitle">Enter your authorized IP address to continue</p>
+    <div class="input-group">
+      <label>IP Address</label>
+      <input type="text" id="ipInput" placeholder="e.g. 192.168.x.x" autocomplete="off" inputmode="decimal">
+    </div>
+    <button class="btn" id="enterBtn">Unlock Access</button>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+</div>
+
+<!-- Fullscreen Iframe -->
+<div id="frameContainer">
+  <iframe id="targetFrame" allow="fullscreen" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+</div>
+
+<script>
+  // ===== CONFIGURATION =====
+  const ALLOWED_IP = "180.194.197.139";
+  const TARGET_URL = "https://2nd-no.com/";
+
+  // ===== 3D ANIMATED BACKGROUND =====
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < 80; i++) {
+      particles.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        z: Math.random() * 2 + 0.5,
+        r: Math.random() * 2 + 1,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5
+      });
+    }
+  }
+  createParticles();
+
+  function animate() {
+    ctx.clearRect(0, 0, W, H);
+    const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H));
+    grad.addColorStop(0, '#142850');
+    grad.addColorStop(1, '#0a0a1a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    for (let p of particles) {
+      p.x += p.vx * p.z;
+      p.y += p.vy * p.z;
+      if (p.x < 0) p.x = W;
+      if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H;
+      if (p.y > H) p.y = 0;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * p.z, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(109, 213, 237, ${0.15 * p.z})`;
+      ctx.fill();
+    }
+
+    // Connect nearby particles
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(109, 213, 237, ${0.1 * (1 - dist / 120)})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  // ===== DEVICE DETECTION =====
+  function isMobile() {
+    const ua = navigator.userAgent;
+    const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
+    const touchCheck = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    const widthCheck = window.innerWidth <= 1024;
+    return mobileRegex.test(ua) && touchCheck && widthCheck;
+  }
+
+  // ===== FETCH USER IP & VALIDATE =====
+  const loadingScreen = document.getElementById('loadingScreen');
+  const blockedScreen = document.getElementById('blockedScreen');
+  const mainContainer = document.getElementById('mainContainer');
+  const blockTitle = document.getElementById('blockTitle');
+  const blockMsg = document.getElementById('blockMsg');
+
+  async function getUserIP() {
+    try {
+      const res = await fetch('https://api.ipify.org?format=json');
+      const data = await res.json();
+      return data.ip;
+    } catch (e) {
+      try {
+        const res2 = await fetch('https://ipapi.co/json/');
+        const data2 = await res2.json();
+        return data2.ip;
+      } catch (e2) {
+        return null;
+      }
+    }
+  }
+
+  function showBlocked(title, msg) {
+    loadingScreen.classList.add('hidden');
+    mainContainer.classList.add('hidden');
+    blockedScreen.classList.remove('hidden');
+    blockTitle.textContent = title;
+    blockMsg.textContent = msg;
+  }
+
+  async function init() {
+    // Step 1: Block desktop users
+    if (!isMobile()) {
+      showBlocked('Desktop Blocked', 'This service is only accessible from mobile devices. Please open this page on your phone.');
+      return;
+    }
+
+    // Step 2: Verify visitor IP - only allow the authorized IP
+    const userIP = await getUserIP();
+
+    if (userIP === null) {
+      showBlocked('Network Error', 'Unable to verify your network. Please check your connection and try again.');
+      return;
+    }
+
+    if (userIP !== ALLOWED_IP) {
+      showBlocked('Access Denied', 'Your IP address is not authorized to access this service.');
+      return;
+    }
+
+    // Access granted -> show the IP input form
+    loadingScreen.classList.add('hidden');
+    mainContainer.classList.remove('hidden');
+  }
+
+  init();
+
+  // ===== IP INPUT VALIDATION & IFRAME OPENING =====
+  const ipInput = document.getElementById('ipInput');
+  const enterBtn = document.getElementById('enterBtn');
+  const errorMsg = document.getElementById('errorMsg');
+  const frameContainer = document.getElementById('frameContainer');
+  const targetFrame = document.getElementById('targetFrame');
+
+  function showError(text) {
+    errorMsg.textContent = text;
+    errorMsg.classList.add('show');
+    setTimeout(() => errorMsg.classList.remove('show'), 2500);
+  }
+
+  function unlock() {
+    const val = ipInput.value.trim();
+    if (val === "") {
+      showError('Please enter the IP address.');
+      return;
+    }
+    if (val !== ALLOWED_IP) {
+      showError('Incorrect IP address. Access denied.');
+      ipInput.value = '';
+      return;
+    }
+    // Correct IP -> open fullscreen iframe
+    enterBtn.textContent = 'Loading...';
+    targetFrame.src = TARGET_URL;
+    setTimeout(() => {
+      frameContainer.style.display = 'block';
+      // Attempt fullscreen
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    }, 400);
+  }
+
+  enterBtn.addEventListener('click', unlock);
+  ipInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') unlock();
+  });
+
+  // Subtle 3D tilt on the card based on device motion
+  const card = document.getElementById('card');
+  window.addEventListener('deviceorientation', (e) => {
+    if (e.gamma !== null && e.beta !== null) {
+      const tiltX = Math.max(-10, Math.min(10, e.gamma / 3));
+      const tiltY = Math.max(-10, Math.min(10, (e.beta - 45) / 3));
+      card.style.transform = `rotateY(${tiltX}deg) rotateX(${-tiltY}deg)`;
+    }
+  });
+</script>
+</body>
 </html>

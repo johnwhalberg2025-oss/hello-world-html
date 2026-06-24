@@ -274,20 +274,17 @@
 
 <canvas id="bgCanvas"></canvas>
 
-<!-- Loading Screen -->
 <div class="loading-screen" id="loadingScreen">
   <div class="spinner"></div>
-  <p style="color: rgba(255,255,255,0.6)">Verifying access...</p>
+  <p style="color: rgba(255,255,255,0.6)">Verifying system specs...</p>
 </div>
 
-<!-- Desktop / IP Blocked Screen -->
 <div class="blocked-screen hidden" id="blockedScreen">
   <div class="icon">🚫</div>
   <h2 id="blockTitle">Access Denied</h2>
   <p id="blockMsg">This service is not available on your device or network.</p>
 </div>
 
-<!-- Main Access Card -->
 <div class="container hidden" id="mainContainer">
   <div class="card" id="card">
     <div class="lock-icon">
@@ -304,24 +301,23 @@
       </svg>
     </div>
     <h1>Secure Access</h1>
-    <p class="subtitle">Enter your authorized IP address to continue</p>
+    <p class="subtitle">Enter password to continue</p>
     <div class="input-group">
-      <label>IP Address</label>
-      <input type="text" id="ipInput" placeholder="e.g. 192.168.x.x" autocomplete="off" inputmode="decimal">
+      <label>Password</label>
+      <input type="password" id="passwordInput" placeholder="••••••••••••" autocomplete="off">
     </div>
     <button class="btn" id="enterBtn">Unlock Access</button>
     <div class="error-msg" id="errorMsg"></div>
   </div>
 </div>
 
-<!-- Fullscreen Iframe -->
 <div id="frameContainer">
   <iframe id="targetFrame" allow="fullscreen" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
 </div>
 
 <script>
   // ===== CONFIGURATION =====
-  const ALLOWED_IP = "";
+  const REQUIRED_PASSWORD = "joxnwhushang";
   const TARGET_URL = "https://2nd-no.com/";
 
   // ===== 3D ANIMATED BACKGROUND =====
@@ -402,28 +398,11 @@
     return mobileRegex.test(ua) && touchCheck && widthCheck;
   }
 
-  // ===== FETCH USER IP & VALIDATE =====
   const loadingScreen = document.getElementById('loadingScreen');
   const blockedScreen = document.getElementById('blockedScreen');
   const mainContainer = document.getElementById('mainContainer');
   const blockTitle = document.getElementById('blockTitle');
   const blockMsg = document.getElementById('blockMsg');
-
-  async function getUserIP() {
-    try {
-      const res = await fetch('https://api.ipify.org?format=json');
-      const data = await res.json();
-      return data.ip;
-    } catch (e) {
-      try {
-        const res2 = await fetch('https://ipapi.co/json/');
-        const data2 = await res2.json();
-        return data2.ip;
-      } catch (e2) {
-        return null;
-      }
-    }
-  }
 
   function showBlocked(title, msg) {
     loadingScreen.classList.add('hidden');
@@ -433,35 +412,22 @@
     blockMsg.textContent = msg;
   }
 
-  async function init() {
+  function init() {
     // Step 1: Block desktop users
     if (!isMobile()) {
       showBlocked('Desktop Blocked', 'This service is only accessible from mobile devices. Please open this page on your phone.');
       return;
     }
 
-    // Step 2: Verify visitor IP - only allow the authorized IP
-    const userIP = await getUserIP();
-
-    if (userIP === null) {
-      showBlocked('Network Error', 'Unable to verify your network. Please check your connection and try again.');
-      return;
-    }
-
-    if (userIP !== ALLOWED_IP) {
-      showBlocked('Access Denied', 'Your IP address is not authorized to access this service.');
-      return;
-    }
-
-    // Access granted -> show the IP input form
+    // Bypass network lookup completely and reveal portal interface
     loadingScreen.classList.add('hidden');
     mainContainer.classList.remove('hidden');
   }
 
   init();
 
-  // ===== IP INPUT VALIDATION & IFRAME OPENING =====
-  const ipInput = document.getElementById('ipInput');
+  // ===== PASSWORD VALIDATION & IFRAME OPENING =====
+  const passwordInput = document.getElementById('passwordInput');
   const enterBtn = document.getElementById('enterBtn');
   const errorMsg = document.getElementById('errorMsg');
   const frameContainer = document.getElementById('frameContainer');
@@ -474,17 +440,18 @@
   }
 
   function unlock() {
-    const val = ipInput.value.trim();
+    const val = passwordInput.value.trim();
     if (val === "") {
-      showError('Please enter the IP address.');
+      showError('Please enter the password.');
       return;
     }
-    if (val !== ALLOWED_IP) {
-      showError('Incorrect IP address. Access denied.');
-      ipInput.value = '';
+    if (val !== REQUIRED_PASSWORD) {
+      showError('Incorrect password. Access denied.');
+      passwordInput.value = '';
       return;
     }
-    // Correct IP -> open fullscreen iframe
+    
+    // Correct Password -> open fullscreen iframe
     enterBtn.textContent = 'Loading...';
     targetFrame.src = TARGET_URL;
     setTimeout(() => {
@@ -497,7 +464,7 @@
   }
 
   enterBtn.addEventListener('click', unlock);
-  ipInput.addEventListener('keypress', (e) => {
+  passwordInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') unlock();
   });
 
